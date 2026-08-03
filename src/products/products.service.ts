@@ -16,28 +16,39 @@ export class ProductsService {
   async findAll(query: PaginationQueryDto) {
     const {
       page = 1,
-      limit = 16,
-      sortBy = 'id',
-      sortOrder = 'DESC',
+      limit = 10,
       category,
+      sortBy,
+      sortOrder = 'DESC',
     } = query;
     const skip = (page - 1) * limit;
 
-    const whereCondition = category ? { category } : {};
+    const qb = this.productRepository.createQueryBuilder('product');
 
-    const [data, total] = await this.productRepository.findAndCount({
-      where: whereCondition,
-      order: { [sortBy]: sortOrder },
-      skip: skip,
-      take: limit,
-    });
+    if (category) {
+      qb.andWhere('product.category = :category', { category });
+    }
 
+    if (sortBy === 'hot') {
+      qb.andWhere(
+        'product.oldPrice IS NOT NULL AND product.oldPrice > product.price',
+      ).orderBy('(product.oldPrice - product.price)', 'DESC');
+    } else if (sortBy === 'new' || sortBy === 'createdAt') {
+      qb.orderBy('product.createdAt', sortOrder);
+    } else if (sortBy) {
+      qb.orderBy(`product.${sortBy}`, sortOrder);
+    } else {
+      qb.orderBy('product.id', 'DESC');
+    }
+
+    qb.skip(skip).take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
     return {
       data,
       total,
       page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      lastPage: Math.ceil(total / limit),
     };
   }
 
@@ -59,6 +70,8 @@ export class ProductsService {
       {
         name: 'Apple iPhone 14 Pro 128GB Silver (MQ023)',
         price: 999,
+        oldPrice: 1149,
+        createdAt: '2026-07-30T10:00:00.000Z',
         category: 'phones',
         color: 'silver',
         screen: '6.1" OLED',
@@ -74,6 +87,8 @@ export class ProductsService {
       {
         name: 'Apple iPhone 14 Plus 128GB PRODUCT Red (MQ513)',
         price: 859,
+        oldPrice: 999,
+        createdAt: '2026-07-28T12:30:00.000Z',
         category: 'phones',
         color: 'red',
         screen: '6.7" OLED',
@@ -85,6 +100,8 @@ export class ProductsService {
       {
         name: 'Apple iPhone 11 Pro Max 64GB Gold (iMT9G2FS/A)',
         price: 799,
+        oldPrice: 899,
+        createdAt: '2026-07-20T08:15:00.000Z',
         category: 'phones',
         color: 'gold',
         screen: '6.5" OLED',

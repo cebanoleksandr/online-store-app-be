@@ -1,4 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+} from 'typeorm';
 
 @Entity('products')
 export class Product {
@@ -10,6 +15,9 @@ export class Product {
 
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;
+
+  @Column({ name: 'old_price', nullable: true })
+  oldPrice: number;
 
   @Column({ nullable: true })
   category: string;
@@ -31,4 +39,7 @@ export class Product {
 
   @Column('text', { array: true, nullable: true })
   images: string[];
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 }
