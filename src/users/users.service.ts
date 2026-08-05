@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import * as bcrypt from 'bcrypt';
+import { User, UserRole } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
@@ -29,5 +34,21 @@ export class UsersService {
   async create(userData: Partial<User>): Promise<User> {
     const newUser = this.usersRepository.create(userData);
     return this.usersRepository.save(newUser);
+  }
+
+  async createAdmin(email: string, password: string): Promise<User> {
+    const existingUser = await this.findByEmail(email);
+    if (existingUser) {
+      throw new ConflictException('Користувач з таким email вже існує');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    return this.create({
+      email,
+      passwordHash,
+      role: UserRole.ADMIN,
+    });
   }
 }

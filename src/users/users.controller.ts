@@ -1,7 +1,10 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { UserRole } from './entities/user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -29,5 +32,17 @@ export class UsersController {
       const { passwordHash, ...result } = user;
       return result;
     });
+  }
+
+  @Roles(UserRole.ADMIN)
+  @Post('admin')
+  async createAdmin(@Body() dto: CreateUserDto) {
+    const newAdmin = await this.usersService.createAdmin(
+      dto.email,
+      dto.password,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash, ...result } = newAdmin;
+    return result;
   }
 }
